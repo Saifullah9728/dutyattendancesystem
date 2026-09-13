@@ -12,6 +12,7 @@ import {
   ChevronRight,
   FileSpreadsheet,
   Printer,
+  FileUp,
   CheckCircle2,
   AlertCircle,
   Award,
@@ -22,14 +23,18 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { formatMinutesToHM, formatTime12h } from '../utils/calculations';
+import { useLanguage } from '../context/LanguageContext';
+import { BENGALI_DAYS_SHORT, formatMonthYear, toBengaliDigits } from '../utils/translations';
 import type { AttendanceRecord, DutyType, MonthlySummary } from '../types';
 
 interface MyAttendanceViewProps {
   onOpenRecordModal: (record?: AttendanceRecord | null, date?: string) => void;
+  onNavigateTab?: (tab: any) => void;
 }
 
-export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecordModal }) => {
+export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecordModal, onNavigateTab }) => {
   const { user, isAdmin } = useAuth();
+  const { t, language } = useLanguage();
   const { success, error } = useToast();
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
@@ -47,8 +52,8 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
   const [filterStatus, setFilterStatus] = useState('all');
 
   const monthName = useMemo(() => {
-    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
-  }, [currentDate]);
+    return formatMonthYear(currentDate, language);
+  }, [currentDate, language]);
 
   const loadData = async () => {
     setLoading(true);
@@ -161,10 +166,12 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm print:hidden">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            My Attendance Records
+            {t('myAttendanceTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Log, inspect, and manage monthly duty shifts with exact timing calculations
+            {language === 'bn'
+              ? 'মাসিক ডিউটি শিফট ও কাজের সময় পর্যবেক্ষণ এবং পরিচালনা করুন'
+              : 'Log, inspect, and manage monthly duty shifts with exact timing calculations'}
           </p>
         </div>
 
@@ -195,7 +202,7 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
             title="Download Excel Sheet"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span className="hidden sm:inline">Excel</span>
+            <span className="hidden sm:inline">{t('exportExcel')}</span>
           </button>
 
           <button
@@ -204,7 +211,7 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
             title="Download CSV"
           >
             <Download className="w-4 h-4 text-blue-600" />
-            <span className="hidden sm:inline">CSV</span>
+            <span className="hidden sm:inline">{t('exportCSV')}</span>
           </button>
 
           <button
@@ -213,15 +220,27 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
             title="Print Attendance Table"
           >
             <Printer className="w-4 h-4 text-slate-600" />
-            <span className="hidden sm:inline">Print</span>
+            <span className="hidden sm:inline">{t('print')}</span>
           </button>
+
+          {onNavigateTab && (
+            <button
+              id="btn-import-attendance-shortcut"
+              onClick={() => onNavigateTab('import_duty')}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-colors shadow-sm"
+              title="Bulk Import from CSV or Excel"
+            >
+              <FileUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="hidden sm:inline">{t('navBulkImport')}</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenRecordModal()}
             className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
           >
             <Plus className="w-4 h-4" />
-            <span>Record Duty</span>
+            <span>{t('recordDuty')}</span>
           </button>
         </div>
       </div>
@@ -232,7 +251,7 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search by date (YYYY-MM-DD), shift, or notes..."
+            placeholder={language === 'bn' ? 'তারিখ, ডিউটি শিফট অথবা নোট দিয়ে খুঁজুন...' : 'Search by date (YYYY-MM-DD), shift, or notes...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -248,7 +267,7 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
             onChange={(e) => setFilterDutyType(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
-            <option value="all">All Duty Types</option>
+            <option value="all">{t('allDutyTypes')}</option>
             {dutyTypes.map((dt) => (
               <option key={dt.id} value={dt.id}>
                 {dt.name}
@@ -262,11 +281,11 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
-            <option value="all">All Statuses</option>
-            <option value="normal">Normal</option>
-            <option value="extra">Extra / Overtime</option>
-            <option value="short">Short Hours</option>
-            <option value="day_off">Day Off</option>
+            <option value="all">{t('allStatuses')}</option>
+            <option value="normal">{language === 'bn' ? 'স্বাভাবিক (Normal)' : 'Normal'}</option>
+            <option value="extra">{language === 'bn' ? 'ওভারটাইম (Extra)' : 'Extra / Overtime'}</option>
+            <option value="short">{language === 'bn' ? 'ঘাটতি (Short Hours)' : 'Short Hours'}</option>
+            <option value="day_off">{language === 'bn' ? 'ছুটি (Day Off)' : 'Day Off'}</option>
           </select>
         </div>
       </div>
@@ -277,30 +296,35 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-                <th className="py-3 px-4">Date & Day</th>
-                <th className="py-3 px-4">Duty Type</th>
-                <th className="py-3 px-4">In Time</th>
-                <th className="py-3 px-4">Out Time</th>
-                <th className="py-3 px-4 text-right">Actual</th>
-                <th className="py-3 px-4 text-right">Expected</th>
-                <th className="py-3 px-4 text-right">Extra</th>
-                <th className="py-3 px-4 text-right">Short</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4">Notes</th>
-                <th className="py-3 px-4 text-right print:hidden">Actions</th>
+                <th className="py-3 px-4">{t('date')} & {t('day')}</th>
+                <th className="py-3 px-4">{t('dutyType')}</th>
+                <th className="py-3 px-4">{t('inTime')}</th>
+                <th className="py-3 px-4">{t('outTime')}</th>
+                <th className="py-3 px-4 text-right">{language === 'bn' ? 'কাজের সময়' : 'Actual'}</th>
+                <th className="py-3 px-4 text-right">{language === 'bn' ? 'নির্ধারিত' : 'Expected'}</th>
+                <th className="py-3 px-4 text-right">{t('overtime')}</th>
+                <th className="py-3 px-4 text-right">{t('shortage')}</th>
+                <th className="py-3 px-4 text-center">{t('status')}</th>
+                <th className="py-3 px-4">{t('notes')}</th>
+                <th className="py-3 px-4 text-right print:hidden">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="py-12 text-center text-slate-400">
-                    No attendance records match your filter for {monthName}.
+                    {language === 'bn'
+                      ? `${monthName}-এ আপনার ফিল্টারের সাথে কোনো হাজিরার রেকর্ড মিলছে না।`
+                      : `No attendance records match your filter for ${monthName}.`}
                   </td>
                 </tr>
               ) : (
                 filteredRecords.map((rec) => {
                   const dateObj = new Date(rec.date);
-                  const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(dateObj);
+                  const dayName =
+                    language === 'bn'
+                      ? BENGALI_DAYS_SHORT[dateObj.getDay()]
+                      : new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(dateObj);
                   const isDayOff = rec.duty_type_id === 'day_off';
 
                   return (
@@ -374,19 +398,29 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
 
                       {/* Status */}
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                            rec.status === 'normal'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : rec.status === 'extra'
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                              : rec.status === 'short'
-                              ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                              : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                          {rec.status}
-                        </span>
+                        {rec.duty_type_id !== 'day_off' && rec.in_time && !rec.out_time ? (
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                            In-Progress
+                          </span>
+                        ) : rec.duty_type_id !== 'day_off' && !rec.in_time && rec.out_time ? (
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                            Out Only
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                              rec.status === 'normal'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                : rec.status === 'extra'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                : rec.status === 'short'
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {rec.status}
+                          </span>
+                        )}
                       </td>
 
                       {/* Notes */}
@@ -428,26 +462,26 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
               {/* Duty Counts Row */}
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-200/80 dark:border-slate-700/80 pb-3">
                 <span className="font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Duty Breakdown:
+                  {language === 'bn' ? 'ডিউটি শিফটের হিসাব:' : 'Duty Breakdown:'}
                 </span>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Morning: <strong className="text-blue-600 dark:text-blue-400">{summary.morning_count}</strong>
+                    {language === 'bn' ? 'মর্নিং' : 'Morning'}: <strong className="text-blue-600 dark:text-blue-400">{summary.morning_count}</strong>
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    General: <strong className="text-emerald-600 dark:text-emerald-400">{summary.general_count}</strong>
+                    {language === 'bn' ? 'জেনারেল' : 'General'}: <strong className="text-emerald-600 dark:text-emerald-400">{summary.general_count}</strong>
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Evening: <strong className="text-amber-600 dark:text-amber-400">{summary.evening_count}</strong>
+                    {language === 'bn' ? 'ইভনিং' : 'Evening'}: <strong className="text-amber-600 dark:text-amber-400">{summary.evening_count}</strong>
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
                     MOD: <strong className="text-purple-600 dark:text-purple-400">{summary.mod_count}</strong>
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Others: <strong className="text-sky-600 dark:text-sky-400">{summary.others_count}</strong>
+                    {language === 'bn' ? 'অন্যান্য' : 'Others'}: <strong className="text-sky-600 dark:text-sky-400">{summary.others_count}</strong>
                   </span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Day Off: <strong className="text-slate-500">{summary.day_off_count}</strong>
+                    {language === 'bn' ? 'ছুটি (Day Off)' : 'Day Off'}: <strong className="text-slate-500">{summary.day_off_count}</strong>
                   </span>
                 </div>
               </div>
@@ -455,26 +489,28 @@ export const MyAttendanceView: React.FC<MyAttendanceViewProps> = ({ onOpenRecord
               {/* Aggregated Totals Row */}
               <div className="flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm font-bold">
                 <div className="text-slate-700 dark:text-slate-300">
-                  Total Working Days:{' '}
-                  <span className="text-slate-900 dark:text-white font-extrabold">{summary.total_working_days} days</span>
+                  {language === 'bn' ? 'মোট কাজের দিন' : 'Total Working Days'}:{' '}
+                  <span className="text-slate-900 dark:text-white font-extrabold">
+                    {summary.total_working_days} {language === 'bn' ? 'দিন' : 'days'}
+                  </span>
                 </div>
                 <div className="text-slate-700 dark:text-slate-300">
-                  Total Actual Hours:{' '}
+                  {language === 'bn' ? 'মোট প্রকৃত সময়' : 'Total Actual Hours'}:{' '}
                   <span className="text-blue-600 dark:text-blue-400 font-extrabold">
                     {formatMinutesToHM(summary.total_actual_minutes)}
                   </span>
                 </div>
                 <div className="text-slate-700 dark:text-slate-300">
-                  Total Expected:{' '}
+                  {language === 'bn' ? 'মোট নির্ধারিত' : 'Total Expected'}:{' '}
                   <span className="text-slate-900 dark:text-white font-extrabold">
                     {formatMinutesToHM(summary.total_expected_minutes)}
                   </span>
                 </div>
                 <div className="text-amber-600 dark:text-amber-400">
-                  Total Extra Hours: +{formatMinutesToHM(summary.total_extra_minutes)}
+                  {language === 'bn' ? 'মোট ওভারটাইম' : 'Total Extra Hours'}: +{formatMinutesToHM(summary.total_extra_minutes)}
                 </div>
                 <div className="text-rose-600 dark:text-rose-400">
-                  Total Short Hours: -{formatMinutesToHM(summary.total_short_minutes)}
+                  {language === 'bn' ? 'মোট ঘাটতি' : 'Total Short Hours'}: -{formatMinutesToHM(summary.total_short_minutes)}
                 </div>
               </div>
             </div>

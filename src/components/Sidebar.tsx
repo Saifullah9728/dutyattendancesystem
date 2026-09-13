@@ -5,6 +5,7 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
   FileSpreadsheet,
+  FileUp,
   Users,
   Clock,
   History,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 import { BrandLogo } from './Navbar';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageToggle } from './LanguageToggle';
 
 export type NavTab =
   | 'dashboard'
@@ -21,6 +24,7 @@ export type NavTab =
   | 'calendar'
   | 'reports'
   | 'sheets'
+  | 'import_duty'
   | 'employees'
   | 'duty_types'
   | 'audit_logs'
@@ -43,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenRecordModal,
 }) => {
   const { isSuperAdmin, isAdmin, user } = useAuth();
+  const { t } = useLanguage();
 
   const handleTabClick = (tab: NavTab) => {
     onSelectTab(tab);
@@ -107,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 transition-all transform active:scale-[0.99]"
         >
           <Clock className="w-4 h-4" />
-          <span>Record Daily Duty</span>
+          <span>{t('recordDailyDuty')}</span>
         </button>
       </div>
 
@@ -116,14 +121,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Core Employee Menu */}
         <div>
           <div className="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Attendance & Duty
+            {t('navAttendanceDuty')}
           </div>
           <div className="space-y-1">
-            {navItem('dashboard', 'Dashboard', <LayoutDashboard className="w-4 h-4" />)}
-            {navItem('my_attendance', 'My Attendance', <CalendarCheck className="w-4 h-4" />)}
-            {navItem('calendar', 'Duty Calendar', <CalendarIcon className="w-4 h-4" />)}
-            {navItem('reports', 'Monthly Reports', <BarChart3 className="w-4 h-4" />)}
-            {navItem('sheets', 'Google Sheets', <FileSpreadsheet className="w-4 h-4" />)}
+            {navItem('dashboard', t('navDashboard'), <LayoutDashboard className="w-4 h-4" />)}
+            {navItem('my_attendance', t('navMyAttendance'), <CalendarCheck className="w-4 h-4" />)}
+            {navItem('calendar', t('navDutyCalendar'), <CalendarIcon className="w-4 h-4" />)}
+            {navItem('reports', t('navMonthlyReports'), <BarChart3 className="w-4 h-4" />)}
+            {navItem('sheets', t('navGoogleSheets'), <FileSpreadsheet className="w-4 h-4" />)}
+            {navItem('import_duty', t('navBulkImport'), <FileUp className="w-4 h-4" />)}
           </div>
         </div>
 
@@ -131,16 +137,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isAdmin && (
           <div>
             <div className="px-3 mb-2 flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              <span>Administration</span>
+              <span>{t('navAdministration')}</span>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 font-bold">
                 Admin
               </span>
             </div>
             <div className="space-y-1">
-              {navItem('employees', 'All Employees', <Users className="w-4 h-4" />)}
-              {navItem('duty_types', 'Duty Types', <Clock className="w-4 h-4" />)}
-              {navItem('audit_logs', 'Audit History', <History className="w-4 h-4" />)}
-              {isSuperAdmin && navItem('admin_mgmt', 'Admin Management', <ShieldCheck className="w-4 h-4" />, 'Super')}
+              {navItem('employees', t('navAllEmployees'), <Users className="w-4 h-4" />)}
+              {navItem('duty_types', t('navDutyTypes'), <Clock className="w-4 h-4" />)}
+              {navItem('audit_logs', t('navAuditHistory'), <History className="w-4 h-4" />)}
+              {isSuperAdmin && navItem('admin_mgmt', t('navAdminMgmt'), <ShieldCheck className="w-4 h-4" />, 'Super')}
             </div>
           </div>
         )}
@@ -148,10 +154,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* System & Profile */}
         <div>
           <div className="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Preferences
+            {t('navPreferences')}
           </div>
           <div className="space-y-1">
-            {navItem('settings', 'Profile & Settings', <Settings className="w-4 h-4" />)}
+            {navItem('settings', t('navProfileSettings'), <Settings className="w-4 h-4" />)}
+          </div>
+
+          {/* Quick Language Switcher inside Sidebar */}
+          <div className="mt-4 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              {t('languageToggle')}
+            </span>
+            <LanguageToggle variant="segmented" />
           </div>
         </div>
       </div>

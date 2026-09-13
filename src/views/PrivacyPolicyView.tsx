@@ -111,7 +111,7 @@ export const PrivacyPolicyView: React.FC = () => {
               If you have any questions, feedback, or requests regarding this Privacy Policy or your data, please contact the project administrator:
             </p>
             <p className="font-semibold text-slate-800 dark:text-slate-200 mt-1">
-              Email: <span className="text-blue-600 dark:text-blue-400">hmdasaifullah28@gmail.com</span>
+              Email: <span className="text-blue-600 dark:text-blue-400">hmdasaifullah@gmail.com</span>
             </p>
           </section>
         </div>

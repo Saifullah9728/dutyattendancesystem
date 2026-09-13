@@ -168,6 +168,14 @@ export async function syncCloudWithLocal(db: Database): Promise<{
 
     // Restore users from Cloud into Local if missing or newer
     for (const [id, cloudUser] of cloudUsersMap.entries()) {
+      const email = (cloudUser.email || '').toLowerCase().trim();
+      let role = cloudUser.role || 'user';
+      if (email === 'hmdasaifullah@gmail.com') {
+        role = 'super_admin';
+      } else if (email === 'hmdasaifullah28@gmail.com' && role === 'super_admin') {
+        role = 'user';
+      }
+
       const localUser = localUsersMap.get(id);
       if (!localUser) {
         // Insert missing user from cloud
@@ -181,7 +189,7 @@ export async function syncCloudWithLocal(db: Database): Promise<{
             cloudUser.email,
             cloudUser.display_name || '',
             cloudUser.avatar_url || '',
-            cloudUser.role || 'user',
+            role,
             cloudUser.status || 'active',
             cloudUser.created_at || new Date().toISOString(),
             cloudUser.updated_at || new Date().toISOString(),
@@ -191,10 +199,17 @@ export async function syncCloudWithLocal(db: Database): Promise<{
       }
     }
 
-    // Upload local users to Cloud if not present in Cloud
-    for (const [id, localUser] of localUsersMap.entries()) {
-      if (!cloudUsersMap.has(id)) {
-        await setDoc(doc(fdb, 'users', id), localUser, { merge: true });
+    // Ensure role consistency for primary accounts in SQLite
+    execute(db, "UPDATE users SET role = 'super_admin' WHERE LOWER(email) = 'hmdasaifullah@gmail.com'");
+    execute(db, "UPDATE users SET role = 'user' WHERE LOWER(email) = 'hmdasaifullah28@gmail.com'");
+
+    // Refresh local users list after any updates
+    const refreshedLocalUsers = queryAll<any>(db, 'SELECT * FROM users');
+    for (const localUser of refreshedLocalUsers) {
+      const email = (localUser.email || '').toLowerCase().trim();
+      const cloudUser = cloudUsersMap.get(localUser.id);
+      if (!cloudUser || cloudUser.role !== localUser.role) {
+        await setDoc(doc(fdb, 'users', localUser.id), localUser, { merge: true });
         uploadedCount++;
       }
     }

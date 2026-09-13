@@ -9,12 +9,12 @@ import { performGoogleSheetsSync } from './server/sheetsSync';
 import type { User, DutyType, AttendanceRecord, SystemSettings } from './src/types';
 
 const PORT = 3000;
-// STRICT: Only hmdasaifullah28@gmail.com is the permanent Super Admin
-const SUPER_ADMIN_EMAILS = ['hmdasaifullah28@gmail.com'];
+// STRICT: Only hmdasaifullah@gmail.com is the permanent Super Admin
+const SUPER_ADMIN_EMAILS = ['hmdasaifullah@gmail.com'];
 
 const isSuperAdminEmail = (email: string) => {
   const clean = (email || '').toLowerCase().trim();
-  return clean === 'hmdasaifullah28@gmail.com';
+  return clean === 'hmdasaifullah@gmail.com';
 };
 
 interface AuthRequest extends Request {
@@ -627,7 +627,14 @@ async function startServer() {
       return res.status(400).json({ error: 'Invalid or inactive duty type' });
     }
 
-    const calc = calculateAttendance(dutyType, in_time || '', out_time || '');
+    const cleanIn = typeof in_time === 'string' ? in_time.trim() : '';
+    const cleanOut = typeof out_time === 'string' ? out_time.trim() : '';
+
+    if (dutyType.id !== 'day_off' && !cleanIn && !cleanOut) {
+      return res.status(400).json({ error: 'Please enter In Time, Out Time, or both for working shifts.' });
+    }
+
+    const calc = calculateAttendance(dutyType, cleanIn, cleanOut);
     const now = new Date().toISOString();
     const targetUser = queryOne<User>(db, 'SELECT * FROM users WHERE id = ?', [targetUserId])!;
 
@@ -654,8 +661,8 @@ async function startServer() {
           duty_type_id,
           dutyType.name,
           dutyType.expected_duration_minutes,
-          in_time || '',
-          out_time || '',
+          cleanIn,
+          cleanOut,
           calc.actual_duration_minutes,
           calc.extra_duration_minutes,
           calc.short_duration_minutes,
@@ -713,8 +720,8 @@ async function startServer() {
         duty_type_id,
         dutyType.name,
         dutyType.expected_duration_minutes,
-        in_time || '',
-        out_time || '',
+        cleanIn,
+        cleanOut,
         calc.actual_duration_minutes,
         calc.extra_duration_minutes,
         calc.short_duration_minutes,
@@ -780,8 +787,13 @@ async function startServer() {
       return res.status(400).json({ error: 'Invalid duty type' });
     }
 
-    const finalIn = in_time !== undefined ? in_time : existing.in_time;
-    const finalOut = out_time !== undefined ? out_time : existing.out_time;
+    const finalIn = in_time !== undefined ? (typeof in_time === 'string' ? in_time.trim() : '') : existing.in_time;
+    const finalOut = out_time !== undefined ? (typeof out_time === 'string' ? out_time.trim() : '') : existing.out_time;
+
+    if (dutyType.id !== 'day_off' && !finalIn && !finalOut) {
+      return res.status(400).json({ error: 'Please enter In Time, Out Time, or both for working shifts.' });
+    }
+
     const calc = calculateAttendance(dutyType, finalIn, finalOut);
     const now = new Date().toISOString();
 
@@ -886,6 +898,223 @@ async function startServer() {
     );
 
     res.json({ success: true, message: 'Record deleted successfully' });
+  });
+
+  // Bulk import attendance records (Excel / CSV upload)
+  app.post('/api/attendance/bulk-import', requireAuth, (req: AuthRequest, res: Response) => {
+    const { year, month, user_id, overwrite_existing = true, records } = req.body;
+
+    if (!year || !month) {
+      return res.status(400).json({ error: 'Year and Month are required for bulk import.' });
+    }
+
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ error: 'No attendance records provided in the request.' });
+    }
+
+    // Determine target user
+    let targetUserId = req.user!.id;
+    if (user_id && user_id !== req.user!.id) {
+      if (req.user!.role !== 'admin' && req.user!.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Only admins can import attendance records for other employees.' });
+      }
+      targetUserId = user_id;
+    }
+
+    const targetUser = queryOne<User>(db, 'SELECT * FROM users WHERE id = ?', [targetUserId]);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Target employee user not found.' });
+    }
+
+    // Preload all active duty types
+    const dutyTypes = queryAll<DutyType>(db, 'SELECT * FROM duty_types');
+    const dutyMap = new Map<string, DutyType>();
+    for (const dt of dutyTypes) {
+      dutyMap.set(dt.id.toLowerCase(), dt);
+      dutyMap.set(dt.name.toLowerCase(), dt);
+    }
+    const dayOff = dutyTypes.find((d) => d.id === 'day_off');
+    if (dayOff) {
+      dutyMap.set('off', dayOff);
+      dutyMap.set('day off', dayOff);
+      dutyMap.set('dayoff', dayOff);
+      dutyMap.set('ছুটি', dayOff);
+      dutyMap.set('holiday', dayOff);
+    }
+    const morning = dutyTypes.find((d) => d.id === 'morning');
+    if (morning) {
+      dutyMap.set('সকাল', morning);
+    }
+    const evening = dutyTypes.find((d) => d.id === 'evening');
+    if (evening) {
+      dutyMap.set('সন্ধ্যা', evening);
+    }
+    const night = dutyTypes.find((d) => d.id === 'night');
+    if (night) {
+      dutyMap.set('রাত', night);
+    }
+
+    const targetYear = Number(year);
+    const targetMonth = Number(month);
+    const monthPrefix = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+
+    let createdCount = 0;
+    let updatedCount = 0;
+    let skippedCount = 0;
+    const errors: string[] = [];
+    const now = new Date().toISOString();
+
+    for (let i = 0; i < records.length; i++) {
+      const item = records[i];
+      const rowNum = i + 1;
+
+      if (!item.date) {
+        errors.push(`Row ${rowNum}: Missing date.`);
+        continue;
+      }
+
+      // Normalize date: support "YYYY-MM-DD", "DD-MM-YYYY", "DD/MM/YYYY", or single day number "1"-"31"
+      let parsedDate = String(item.date).trim();
+      if (/^\d{1,2}$/.test(parsedDate)) {
+        const dayNum = parseInt(parsedDate, 10);
+        parsedDate = `${monthPrefix}-${String(dayNum).padStart(2, '0')}`;
+      } else if (/^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(parsedDate)) {
+        const parts = parsedDate.split(/[/-]/);
+        parsedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(parsedDate)) {
+        errors.push(`Row ${rowNum}: Invalid date format "${item.date}". Expected YYYY-MM-DD or Day 1-31.`);
+        continue;
+      }
+
+      if (!parsedDate.startsWith(monthPrefix)) {
+        errors.push(`Row ${rowNum}: Date ${parsedDate} does not match selected month (${monthPrefix}).`);
+        continue;
+      }
+
+      // Match duty type
+      const dutyKey = String(item.duty_type_id || item.duty_type || '').trim().toLowerCase();
+      let matchedDuty = dutyMap.get(dutyKey);
+      if (!matchedDuty) {
+        matchedDuty = dutyMap.get('morning') || dutyTypes[0];
+      }
+
+      const cleanIn = typeof item.in_time === 'string' ? item.in_time.trim() : '';
+      const cleanOut = typeof item.out_time === 'string' ? item.out_time.trim() : '';
+
+      const calc = calculateAttendance(matchedDuty, cleanIn, cleanOut);
+
+      const existing = queryOne<AttendanceRecord>(
+        db,
+        'SELECT * FROM attendance_records WHERE user_id = ? AND date = ?',
+        [targetUserId, parsedDate]
+      );
+
+      if (existing) {
+        if (!overwrite_existing) {
+          skippedCount++;
+          continue;
+        }
+
+        execute(
+          db,
+          `UPDATE attendance_records
+           SET duty_type_id = ?,
+               duty_type_name_snapshot = ?,
+               expected_duration_minutes_snapshot = ?,
+               in_time = ?,
+               out_time = ?,
+               actual_duration_minutes = ?,
+               extra_duration_minutes = ?,
+               short_duration_minutes = ?,
+               difference_minutes = ?,
+               status = ?,
+               notes = ?,
+               updated_by = ?,
+               updated_at = ?
+           WHERE id = ?`,
+          [
+            matchedDuty.id,
+            matchedDuty.name,
+            matchedDuty.expected_duration_minutes,
+            cleanIn,
+            cleanOut,
+            calc.actual_duration_minutes,
+            calc.extra_duration_minutes,
+            calc.short_duration_minutes,
+            calc.difference_minutes,
+            calc.status,
+            item.notes || existing.notes || '',
+            req.user!.id,
+            now,
+            existing.id,
+          ]
+        );
+        updatedCount++;
+      } else {
+        const id = `att-${targetUserId}-${parsedDate}-${Date.now().toString(36)}-${i}`;
+        execute(
+          db,
+          `INSERT INTO attendance_records (
+            id, user_id, date, duty_type_id, duty_type_name_snapshot,
+            expected_duration_minutes_snapshot, in_time, out_time,
+            actual_duration_minutes, extra_duration_minutes, short_duration_minutes,
+            difference_minutes, status, notes, created_by, updated_by, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            targetUserId,
+            parsedDate,
+            matchedDuty.id,
+            matchedDuty.name,
+            matchedDuty.expected_duration_minutes,
+            cleanIn,
+            cleanOut,
+            calc.actual_duration_minutes,
+            calc.extra_duration_minutes,
+            calc.short_duration_minutes,
+            calc.difference_minutes,
+            calc.status,
+            item.notes || '',
+            req.user!.id,
+            req.user!.id,
+            now,
+            now,
+          ]
+        );
+        createdCount++;
+      }
+    }
+
+    // Consolidated audit log
+    execute(
+      db,
+      `INSERT INTO audit_logs (id, actor_user_id, actor_name, actor_email, target_user_id, target_name, action, entity_type, entity_id, old_value, new_value, notes, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?, 'ATTENDANCE_BULK_IMPORT', 'attendance', ?, 'null', ?, ?, ?)`,
+      [
+        `audit-${Date.now()}`,
+        req.user!.id,
+        req.user!.display_name,
+        req.user!.email,
+        targetUserId,
+        targetUser.display_name,
+        monthPrefix,
+        JSON.stringify({ createdCount, updatedCount, skippedCount, monthPrefix }),
+        `Bulk imported attendance for ${targetUser.display_name} (${monthPrefix}): ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped`,
+        now,
+      ]
+    );
+
+    res.json({
+      success: true,
+      createdCount,
+      updatedCount,
+      skippedCount,
+      totalProcessed: createdCount + updatedCount,
+      errors,
+      monthPrefix,
+    });
   });
 
   // ==========================================

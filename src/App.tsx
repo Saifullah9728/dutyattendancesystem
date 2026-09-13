@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
+import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar, type NavTab } from './components/Sidebar';
 import { AttendanceModal } from './components/AttendanceModal';
@@ -9,6 +10,7 @@ import { MyAttendanceView } from './views/MyAttendanceView';
 import { CalendarView } from './views/CalendarView';
 import { ReportsView } from './views/ReportsView';
 import { GoogleSheetsView } from './views/GoogleSheetsView';
+import { ImportDutyView } from './views/ImportDutyView';
 import { EmployeesView } from './views/EmployeesView';
 import { DutyTypesView } from './views/DutyTypesView';
 import { AdminManagementView } from './views/AdminManagementView';
@@ -112,7 +114,10 @@ const MainLayout: React.FC = () => {
           )}
 
           {currentTab === 'my_attendance' && (
-            <MyAttendanceView onOpenRecordModal={handleOpenRecordModal} />
+            <MyAttendanceView
+              onOpenRecordModal={handleOpenRecordModal}
+              onNavigateTab={setCurrentTab}
+            />
           )}
 
           {currentTab === 'calendar' && (
@@ -122,6 +127,8 @@ const MainLayout: React.FC = () => {
           {currentTab === 'reports' && <ReportsView />}
 
           {currentTab === 'sheets' && <GoogleSheetsView />}
+
+          {currentTab === 'import_duty' && <ImportDutyView onNavigateTab={setCurrentTab} />}
 
           {currentTab === 'employees' && isAdmin && <EmployeesView />}
 
@@ -150,9 +157,11 @@ const MainLayout: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <MainLayout />
-      </ToastProvider>
+      <LanguageProvider>
+        <ToastProvider>
+          <MainLayout />
+        </ToastProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

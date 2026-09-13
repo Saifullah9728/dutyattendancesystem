@@ -76,7 +76,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
     }
 
     const cleanName = newName.trim() || cleanEmail.split('@')[0].replace(/[._]/g, ' ');
-    const isSaifullah = cleanEmail === 'hmdasaifullah28@gmail.com';
+    const isSaifullah = cleanEmail === 'hmdasaifullah@gmail.com';
 
     const account: GoogleAccountProfile = {
       email: cleanEmail,

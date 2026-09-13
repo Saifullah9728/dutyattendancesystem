@@ -152,6 +152,28 @@ export const api = {
     request<{ record: AttendanceRecord }>(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteAttendance: (id: string) =>
     request<{ success: boolean; message: string }>(`/api/attendance/${id}`, { method: 'DELETE' }),
+  bulkImportAttendance: (payload: {
+    year: number;
+    month: number;
+    user_id?: string;
+    overwrite_existing?: boolean;
+    records: Array<{
+      date: string;
+      duty_type_id: string;
+      in_time?: string;
+      out_time?: string;
+      notes?: string;
+    }>;
+  }) =>
+    request<{
+      success: boolean;
+      createdCount: number;
+      updatedCount: number;
+      skippedCount: number;
+      totalProcessed: number;
+      errors: string[];
+      monthPrefix: string;
+    }>('/api/attendance/bulk-import', { method: 'POST', body: JSON.stringify(payload) }),
 
   // Reports
   getMonthlyReport: (month: number, year: number, userId?: string, all?: boolean) => {

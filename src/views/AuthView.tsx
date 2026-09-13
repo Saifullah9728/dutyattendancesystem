@@ -17,7 +17,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 export const GOOGLE_CLIENT_ID =
   (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
   firebaseConfig.oAuthClientId ||
-  '446079436979-lvfn81h8efuu7ag8imrtluum6in0b1qi.apps.googleusercontent.com';
+  '';
 
 function decodeJwt(token: string) {
   try {

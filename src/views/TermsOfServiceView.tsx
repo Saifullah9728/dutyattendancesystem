@@ -87,7 +87,7 @@ export const TermsOfServiceView: React.FC = () => {
             </h2>
             <p>
               For inquiries regarding these Terms of Service, please reach out to the project administrator at{' '}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">hmdasaifullah28@gmail.com</span>.
+              <span className="font-semibold text-blue-600 dark:text-blue-400">hmdasaifullah@gmail.com</span>.
             </p>
           </section>
         </div>

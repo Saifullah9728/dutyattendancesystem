@@ -32,7 +32,7 @@ export const EmployeesView: React.FC = () => {
   }, []);
 
   const isProtectedAccount = (email: string) =>
-    ['hmdasaifullah28@gmail.com'].includes((email || '').toLowerCase());
+    ['hmdasaifullah@gmail.com'].includes((email || '').toLowerCase());
 
   const handleToggleStatus = async (emp: User) => {
     if (isProtectedAccount(emp.email)) {

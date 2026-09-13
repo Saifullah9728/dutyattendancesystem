@@ -58,7 +58,7 @@ export const AdminManagementView: React.FC = () => {
   };
 
   const isProtectedAdmin = (email: string) =>
-    ['hmdasaifullah28@gmail.com'].includes((email || '').toLowerCase());
+    ['hmdasaifullah@gmail.com'].includes((email || '').toLowerCase());
 
   const handleDemote = async (targetUser: User) => {
     if (isProtectedAdmin(targetUser.email)) {
@@ -114,7 +114,7 @@ export const AdminManagementView: React.FC = () => {
         <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1">
           <p className="font-bold text-slate-900 dark:text-white">Built-in Role Protection Safeguards:</p>
           <ul className="list-disc list-inside space-y-0.5 text-slate-600 dark:text-slate-400">
-            <li>Account <strong>hmdasaifullah28@gmail.com</strong> is hardcoded as the root permanent Super Admin and cannot be demoted or deactivated.</li>
+            <li>Account <strong>hmdasaifullah@gmail.com</strong> is hardcoded as the root permanent Super Admin and cannot be demoted or deactivated.</li>
             <li>System strictly prevents removing the last Super Admin, protecting against administrator lockout.</li>
             <li>All role promotions and demotions generate an immutable audit log entry.</li>
           </ul>

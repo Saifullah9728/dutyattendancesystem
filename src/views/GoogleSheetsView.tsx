@@ -664,7 +664,7 @@ export const GoogleSheetsView: React.FC = () => {
                     Request Under Super Admin Review
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-                    Your request for Google Sheets synchronization access has been safely transmitted to the Super Admin (<strong>hmdasaifullah28@gmail.com</strong>).
+                    Your request for Google Sheets synchronization access has been safely transmitted to the Super Admin (<strong>hmdasaifullah@gmail.com</strong>).
                   </p>
                 </div>
               </div>

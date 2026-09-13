@@ -173,33 +173,31 @@ function initSchema(db: Database) {
 function seedDefaultData(db: Database) {
   const now = new Date().toISOString();
 
-  // Clean up any historical demo/mock accounts, demo records, and remove hmdasaifullah@gmail.com from super admin
+  // Clean up legacy mock accounts and ensure hmdasaifullah@gmail.com is Super Admin
   try {
     db.run(`
       DELETE FROM users WHERE email IN ('rahim.duty@example.com', 'tanvir.admin@example.com') OR id IN ('user-colleague-rahim', 'user-colleague-tanvir');
-      DELETE FROM users WHERE email = 'hmdasaifullah@gmail.com' AND id = 'user-saifullah-superadmin';
-      UPDATE users SET role = 'user' WHERE email = 'hmdasaifullah@gmail.com';
-      DELETE FROM attendance_records WHERE id LIKE 'att-saifullah-%' OR user_id IN ('user-colleague-rahim', 'user-colleague-tanvir');
-      DELETE FROM audit_logs WHERE actor_user_id IN ('user-colleague-rahim', 'user-colleague-tanvir');
+      UPDATE users SET role = 'user' WHERE LOWER(email) = 'hmdasaifullah28@gmail.com';
+      UPDATE users SET role = 'super_admin' WHERE LOWER(email) = 'hmdasaifullah@gmail.com';
     `);
   } catch (cleanErr) {
     console.warn('Cleanup check completed:', cleanErr);
   }
 
-  // 1. Ensure Root Super Admin Account (hmdasaifullah28@gmail.com only)
-  const adminStmt28 = db.prepare('SELECT id FROM users WHERE email = ?');
-  adminStmt28.bind(['hmdasaifullah28@gmail.com']);
-  const hasAdmin28 = adminStmt28.step();
-  adminStmt28.free();
+  // 1. Ensure Root Super Admin Account (hmdasaifullah@gmail.com)
+  const adminStmt = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?');
+  adminStmt.bind(['hmdasaifullah@gmail.com']);
+  const hasAdmin = adminStmt.step();
+  adminStmt.free();
 
-  if (!hasAdmin28) {
+  if (!hasAdmin) {
     db.run(
       `INSERT INTO users (id, google_id, email, display_name, avatar_url, role, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        'user-saifullah-superadmin-28',
-        'google-saifullah-28',
-        'hmdasaifullah28@gmail.com',
+        'user-saifullah-superadmin',
+        'google-saifullah-main',
+        'hmdasaifullah@gmail.com',
         'Saifullah (Super Admin)',
         'https://lh3.googleusercontent.com/a/default-user=s120',
         'super_admin',

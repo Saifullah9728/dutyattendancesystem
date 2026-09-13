@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Sun, Moon, ShieldCheck, UserCheck, ChevronDown, LogIn, LogOut, Sparkles, Laptop, Cloud } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useToast } from './Toast';
+import { LanguageToggle } from './LanguageToggle';
 import { GoogleAccountChooserModal, type GoogleAccountProfile } from './GoogleAccountChooserModal';
+import firebaseConfig from '../../firebase-applet-config.json';
 
 interface NavbarProps {
   darkMode: boolean;
@@ -12,6 +15,7 @@ interface NavbarProps {
 }
 
 export const BrandLogo: React.FC<{ className?: string; iconOnly?: boolean }> = ({ className = 'h-9', iconOnly = false }) => {
+  const { t } = useLanguage();
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {/* Custom crafted SVG combining Clock, Shift Schedule Grid, and Attendance Checkmark */}
@@ -33,14 +37,14 @@ export const BrandLogo: React.FC<{ className?: string; iconOnly?: boolean }> = (
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
             <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white leading-none">
-              DUTY & ATTENDANCE
+              {t('brandTitle')}
             </span>
             <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200">
-              SYSTEM
+              {t('systemBadge')}
             </span>
           </div>
           <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
-            Shift & Working Hours Management
+            {t('brandSubtitle')}
           </span>
         </div>
       )}
@@ -55,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenRecordModal,
 }) => {
   const { user, switchUser, googleLogin, logout, isSuperAdmin, isAdmin } = useAuth();
+  const { t } = useLanguage();
   const { success, info } = useToast();
   const [dhakaTime, setDhakaTime] = useState('');
   const [dhakaDate, setDhakaDate] = useState('');
@@ -113,7 +118,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     const gWindow = window as any;
     const clientId =
       (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
-      '1054300024756-51am3fpthoj2tn2ge69rlvdf9a0hikab.apps.googleusercontent.com';
+      firebaseConfig.oAuthClientId ||
+      '';
 
     if (gWindow?.google?.accounts?.oauth2) {
       try {
@@ -183,7 +189,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Google Cloud Firebase Firestore Persistence Active"
         >
           <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-          <span>Cloud Synced</span>
+          <span>{t('cloudSynced')}</span>
         </div>
 
         {/* Live Asia/Dhaka Clock - Mobile/Tablet compact */}
@@ -194,7 +200,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-1.5 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         {/* Quick Duty Record Button */}
         <button
           id="btn-quick-record-attendance"
@@ -202,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="hidden sm:flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm transition-all min-h-[40px]"
         >
           <Clock className="w-4 h-4" />
-          <span>Record Duty</span>
+          <span>{t('recordDuty')}</span>
         </button>
 
         {/* Quick Duty Record Button for Small Mobile */}
@@ -210,10 +216,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           id="btn-quick-record-mobile"
           onClick={onOpenRecordModal}
           className="flex sm:hidden items-center justify-center w-9 h-9 rounded-xl bg-blue-600 text-white shadow-sm active:scale-95"
-          title="Record Duty"
+          title={t('recordDuty')}
         >
           <Clock className="w-4 h-4" />
         </button>
+
+        {/* Language Toggle Button (বাংলা / English) */}
+        <LanguageToggle />
 
         {/* Dark Mode Toggle */}
         <button
@@ -246,15 +255,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center gap-1">
                 {isSuperAdmin ? (
                   <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
-                    <ShieldCheck className="w-3 h-3" /> Super Admin
+                    <ShieldCheck className="w-3 h-3" /> {t('roleSuperAdmin')}
                   </span>
                 ) : isAdmin ? (
                   <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
-                    <ShieldCheck className="w-3 h-3" /> Admin
+                    <ShieldCheck className="w-3 h-3" /> {t('roleAdmin')}
                   </span>
                 ) : (
                   <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                    <UserCheck className="w-3 h-3" /> Employee
+                    <UserCheck className="w-3 h-3" /> {t('roleEmployee')}
                   </span>
                 )}
               </div>
@@ -274,7 +283,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                   {isSuperAdmin && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200">
-                      Super Admin
+                      {t('roleSuperAdmin')}
                     </span>
                   )}
                 </div>
@@ -286,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-xl transition-colors text-left"
                 >
                   <LogIn className="w-4 h-4 shrink-0" />
-                  <span>অন্য Google অ্যাকাউন্টে পরিবর্তন করুন</span>
+                  <span>{t('switchAccount')}</span>
                 </button>
 
                 <button
@@ -299,7 +308,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition-colors text-left"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
-                  <span>সাইন আউট (Sign Out)</span>
+                  <span>{t('logout')}</span>
                 </button>
               </div>
             </div>

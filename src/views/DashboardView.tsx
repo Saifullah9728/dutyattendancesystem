@@ -158,19 +158,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div>
                 <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
                   <span>{todayRecord.duty_type_name_snapshot} Shift</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
-                    Recorded
-                  </span>
+                  {todayRecord.duty_type_id === 'day_off' ? (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-500/30 text-slate-200 border border-slate-400/30">
+                      Day Off
+                    </span>
+                  ) : todayRecord.in_time && todayRecord.out_time ? (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
+                      Completed
+                    </span>
+                  ) : todayRecord.in_time && !todayRecord.out_time ? (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/30">
+                      In-Progress
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                      Out Logged
+                    </span>
+                  )}
                 </h2>
                 <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-blue-100 mt-1">
                   {todayRecord.duty_type_id !== 'day_off' ? (
                     <>
                       <span>
-                        Timing: <strong>{formatTime12h(todayRecord.in_time)}</strong> - <strong>{formatTime12h(todayRecord.out_time)}</strong>
+                        {todayRecord.in_time && todayRecord.out_time ? (
+                          <>
+                            Timing: <strong>{formatTime12h(todayRecord.in_time)}</strong> -{' '}
+                            <strong>{formatTime12h(todayRecord.out_time)}</strong>
+                          </>
+                        ) : todayRecord.in_time ? (
+                          <>
+                            Timing: In at <strong>{formatTime12h(todayRecord.in_time)}</strong> (Out pending)
+                          </>
+                        ) : (
+                          <>
+                            Timing: In pending (Out at <strong>{formatTime12h(todayRecord.out_time)}</strong>)
+                          </>
+                        )}
                       </span>
                       <span>•</span>
                       <span>
-                        Actual: <strong>{formatMinutesToHM(todayRecord.actual_duration_minutes)}</strong> (Expected: {formatMinutesToHM(todayRecord.expected_duration_minutes_snapshot)})
+                        {todayRecord.in_time && todayRecord.out_time ? (
+                          <>
+                            Actual: <strong>{formatMinutesToHM(todayRecord.actual_duration_minutes)}</strong> (Expected:{' '}
+                            {formatMinutesToHM(todayRecord.expected_duration_minutes_snapshot)})
+                          </>
+                        ) : (
+                          <span>Expected: {formatMinutesToHM(todayRecord.expected_duration_minutes_snapshot)}</span>
+                        )}
                       </span>
                     </>
                   ) : (
@@ -506,25 +540,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                         {rec.duty_type_name_snapshot}
                       </span>
-                      <span
-                        className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
-                          rec.status === 'normal'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                            : rec.status === 'extra'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                            : rec.status === 'short'
-                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                            : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        {rec.status}
-                      </span>
+                      {rec.duty_type_id !== 'day_off' && rec.in_time && !rec.out_time ? (
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                          In-Progress
+                        </span>
+                      ) : rec.duty_type_id !== 'day_off' && !rec.in_time && rec.out_time ? (
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                          Out Only
+                        </span>
+                      ) : (
+                        <span
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                            rec.status === 'normal'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : rec.status === 'extra'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : rec.status === 'short'
+                              ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                              : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {rec.status}
+                        </span>
+                      )}
                     </div>
 
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
                       {rec.duty_type_id !== 'day_off' ? (
                         <span>
-                          {formatTime12h(rec.in_time)} - {formatTime12h(rec.out_time)}
+                          {rec.in_time && rec.out_time
+                            ? `${formatTime12h(rec.in_time)} - ${formatTime12h(rec.out_time)}`
+                            : rec.in_time
+                            ? `In: ${formatTime12h(rec.in_time)} (Out pending)`
+                            : rec.out_time
+                            ? `Out: ${formatTime12h(rec.out_time)} (In pending)`
+                            : 'No timings logged'}
                         </span>
                       ) : (
                         <span>Rest day (0h)</span>

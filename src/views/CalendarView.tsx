@@ -210,7 +210,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenRecordModal })
                   {rec ? (
                     <span
                       className={`text-[8px] sm:text-[9px] font-extrabold uppercase px-1 sm:px-1.5 py-0.5 rounded-full ${
-                        rec.status === 'normal'
+                        rec.duty_type_id !== 'day_off' && rec.in_time && !rec.out_time
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                          : rec.duty_type_id !== 'day_off' && !rec.in_time && rec.out_time
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                          : rec.status === 'normal'
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                           : rec.status === 'extra'
                           ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
@@ -219,7 +223,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenRecordModal })
                           : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      {rec.status === 'day_off' ? 'Off' : rec.status}
+                      {rec.duty_type_id !== 'day_off' && rec.in_time && !rec.out_time
+                        ? 'In'
+                        : rec.duty_type_id !== 'day_off' && !rec.in_time && rec.out_time
+                        ? 'Out'
+                        : rec.status === 'day_off'
+                        ? 'Off'
+                        : rec.status}
                     </span>
                   ) : (
                     <span className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 transition-opacity hidden sm:inline-block">
@@ -253,9 +263,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenRecordModal })
 
                       {!isDayOff ? (
                         <div className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-mono leading-tight">
-                          <div className="hidden sm:block">{formatTime12h(rec.in_time)} - {formatTime12h(rec.out_time)}</div>
+                          <div className="hidden sm:block">
+                            {rec.in_time && rec.out_time
+                              ? `${formatTime12h(rec.in_time)} - ${formatTime12h(rec.out_time)}`
+                              : rec.in_time
+                              ? `In: ${formatTime12h(rec.in_time)}`
+                              : rec.out_time
+                              ? `Out: ${formatTime12h(rec.out_time)}`
+                              : 'No time'}
+                          </div>
                           <div className="font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                            {formatMinutesToHM(rec.actual_duration_minutes)}
+                            {rec.in_time && rec.out_time
+                              ? formatMinutesToHM(rec.actual_duration_minutes)
+                              : rec.in_time
+                              ? 'In Progress'
+                              : 'Out Only'}
                           </div>
                         </div>
                       ) : (
