@@ -1,0 +1,6 @@
+{
+  "name": "Duty & Attendance System",
+  "description": "Office Duty, Attendance, Shift, Working Hours, Reporting, and Employee Management System with Google Firebase Firestore cloud persistence and Google Sheets synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

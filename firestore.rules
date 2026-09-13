@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow read and write to documents
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /duty_types/{dutyTypeId} {
+      allow read, write: if true;
+    }
+
+    match /attendance_records/{recordId} {
+      allow read, write: if true;
+    }
+
+    match /system_settings/{settingKey} {
+      allow read, write: if true;
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    // Fallback rule for any other collection
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

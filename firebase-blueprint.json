@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "users": {
+      "title": "Users",
+      "description": "System users including employees, admins, and the permanent super admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user identifier" },
+        "google_id": { "type": "string", "description": "Google OAuth subject identifier" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "display_name": { "type": "string", "description": "User display name" },
+        "avatar_url": { "type": "string", "description": "Avatar photo URL" },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "user"], "description": "Access control role" },
+        "status": { "type": "string", "enum": ["active", "deactivated"], "description": "Account status" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updated_at": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "email", "display_name", "role", "status", "created_at", "updated_at"]
+    },
+    "duty_types": {
+      "title": "Duty Types",
+      "description": "Configurable shift schedules and duty types.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique duty type identifier" },
+        "name": { "type": "string", "description": "Name of the shift/duty" },
+        "start_time": { "type": "string", "description": "Shift start time (HH:mm)" },
+        "end_time": { "type": "string", "description": "Shift end time (HH:mm)" },
+        "grace_period_mins": { "type": "number", "description": "Grace period in minutes" },
+        "late_penalty_mins": { "type": "number", "description": "Penalty threshold in minutes" },
+        "is_active": { "type": "boolean", "description": "Whether duty type is active" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["id", "name", "start_time", "end_time", "is_active", "created_at"]
+    },
+    "attendance_records": {
+      "title": "Attendance Records",
+      "description": "Daily in/out attendance entries with camera photos and status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Record ID" },
+        "user_id": { "type": "string", "description": "User ID" },
+        "duty_type_id": { "type": "string", "description": "Duty Type ID" },
+        "date": { "type": "string", "description": "Date (YYYY-MM-DD)" },
+        "in_time": { "type": ["string", "null"], "description": "Check-in ISO timestamp or time" },
+        "out_time": { "type": ["string", "null"], "description": "Check-out ISO timestamp or time" },
+        "in_photo_url": { "type": ["string", "null"], "description": "Check-in photo" },
+        "out_photo_url": { "type": ["string", "null"], "description": "Check-out photo" },
+        "in_device_id": { "type": ["string", "null"], "description": "Check-in device/IP" },
+        "out_device_id": { "type": ["string", "null"], "description": "Check-out device/IP" },
+        "status": { "type": "string", "enum": ["present", "absent", "late", "penalty_applied", "on_duty"], "description": "Attendance status" },
+        "late_by_mins": { "type": "number", "description": "Minutes late" },
+        "remarks": { "type": "string", "description": "Notes or remarks" },
+        "is_locked": { "type": "boolean", "description": "Locked against changes" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Created at" },
+        "updated_at": { "type": "string", "format": "date-time", "description": "Updated at" }
+      },
+      "required": ["id", "user_id", "duty_type_id", "date", "status", "created_at", "updated_at"]
+    },
+    "system_settings": {
+      "title": "System Settings",
+      "description": "Key-value configuration for duty rules, penalties, and org details.",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string", "description": "Setting key" },
+        "value": { "type": "string", "description": "Setting value (JSON or string)" },
+        "updated_at": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["key", "value", "updated_at"]
+    },
+    "audit_logs": {
+      "title": "Audit Logs",
+      "description": "Security and activity logs for duty management events.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "actor_id": { "type": "string", "description": "Actor user ID" },
+        "actor_email": { "type": "string", "description": "Actor email" },
+        "action": { "type": "string", "description": "Action performed" },
+        "target_entity": { "type": "string", "description": "Target entity" },
+        "target_id": { "type": "string", "description": "Target ID" },
+        "details": { "type": "string", "description": "Details" },
+        "ip_address": { "type": "string", "description": "IP or device identifier" },
+        "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["id", "actor_email", "action", "created_at"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "entity": "users",
+      "description": "User profile document keyed by userId"
+    },
+    "/duty_types/{dutyTypeId}": {
+      "entity": "duty_types",
+      "description": "Duty type schedule document"
+    },
+    "/attendance_records/{recordId}": {
+      "entity": "attendance_records",
+      "description": "Daily attendance record document"
+    },
+    "/system_settings/{settingKey}": {
+      "entity": "system_settings",
+      "description": "System setting document keyed by setting key"
+    },
+    "/audit_logs/{logId}": {
+      "entity": "audit_logs",
+      "description": "System audit log entry"
+    }
+  }
+}

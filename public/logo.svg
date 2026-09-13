@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#blueGrad)" />
+  
+  <!-- Calendar / Duty Card Silhouette -->
+  <rect x="100" y="120" width="312" height="280" rx="36" fill="#FFFFFF" fill-opacity="0.95" />
+  
+  <!-- Header Bar -->
+  <path d="M 100 156 C 100 136 116 120 136 120 L 376 120 C 396 120 412 136 412 156 L 412 190 L 100 190 Z" fill="#1E40AF" />
+  
+  <!-- Binder Rings -->
+  <rect x="160" y="96" width="24" height="48" rx="12" fill="#93C5FD" />
+  <rect x="328" y="96" width="24" height="48" rx="12" fill="#93C5FD" />
+
+  <!-- Clock & Checkmark Symbol inside -->
+  <circle cx="256" cy="290" r="64" fill="none" stroke="#2563EB" stroke-width="14" />
+  <path d="M 256 250 L 256 290 L 285 305" fill="none" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Verified Badge -->
+  <circle cx="350" cy="350" r="38" fill="url(#accentGrad)" />
+  <path d="M 334 350 L 345 361 L 368 338" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
